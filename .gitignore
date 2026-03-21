@@ -1,0 +1,16 @@
+# Claude Code local settings
+.claude/
+
+# Old/backup files
+*.old
+
+# Reference/dev docs (not part of the app)
+docs/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+*.swp

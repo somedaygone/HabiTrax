@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HabiTrax">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff">
+  <title>HabiTrax</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-label">Loading HabiTrax…</div>
+</div>
+
+<!-- Auth screen -->
+<div id="auth-screen">
+  <div class="app-logo">📋</div>
+  <h1>HabiTrax</h1>
+  <p>Sign in with your Microsoft account to sync your habits via OneDrive.</p>
+  <button class="sign-in-btn" id="sign-in-btn">Sign in with Microsoft</button>
+</div>
+
+<!-- Error screen -->
+<div id="error-screen">
+  <div style="font-size:40px">⚠️</div>
+  <p id="error-message"></p>
+  <div class="error-actions" id="error-actions">
+    <button class="err-btn primary" id="error-retry-btn">Retry</button>
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="main">
+  <!-- Offline banner -->
+  <div id="offline-banner">You're offline. Changes cannot be saved.</div>
+
+  <!-- App views -->
+  <div class="view active" id="view-today">
+    <!-- Header -->
+    <div class="today-header">
+      <div class="date-nav">
+        <button class="date-nav-btn" id="btn-prev" aria-label="Previous day">←</button>
+        <div class="date-info">
+          <div class="date-main" id="date-main">Today</div>
+          <div class="date-sub" id="date-sub"></div>
+        </div>
+        <button class="date-nav-btn" id="btn-next" aria-label="Next day" disabled>→</button>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Done</div>
+        <div class="score-number" id="score-display">0 <span>/ 0</span></div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" id="score-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back to today bar (shown when viewing past date) -->
+    <div class="back-today-bar" id="back-today-bar">
+      <button class="back-today-btn" id="back-today-btn">← Back to today</button>
+    </div>
+
+    <!-- Habit list -->
+    <div class="habit-list" id="habit-list"></div>
+  </div>
+
+  <div class="view" id="view-manage">
+    <!-- Manage header -->
+    <div class="mgmt-header">
+      <div class="mgmt-title">Habits</div>
+      <button class="add-btn" id="add-habit-btn">+ Add Habit</button>
+    </div>
+
+    <!-- Add/Edit form -->
+    <div id="edit-form-wrap" style="display:none;">
+      <div class="edit-form-wrap">
+        <div class="edit-form">
+          <div id="form-title" style="font-size:14px;font-weight:600;margin-bottom:12px;">New Habit</div>
+          <label for="habit-name-input">Habit Name</label>
+          <input type="text" id="habit-name-input" placeholder="e.g. Morning Prayer" autocomplete="off">
+          <label for="habit-pressure-input">Days before warning (pressure window)</label>
+          <div class="pressure-row">
+            <input type="number" id="habit-pressure-input" placeholder="3" min="1" max="365">
+            <div class="pressure-hint">days without completion before turning red</div>
+          </div>
+          <div class="form-actions">
+            <button class="cancel-btn" id="form-cancel-btn">Cancel</button>
+            <button class="save-btn" id="form-save-btn">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Management list -->
+    <div class="mgmt-list" id="mgmt-list"></div>
+  </div>
+
+  <!-- Bottom navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-tab active" id="nav-today">
+      <span class="nav-icon">☀️</span>Today
+    </button>
+    <button class="nav-tab" id="nav-manage">
+      <span class="nav-icon">⚙️</span>Habits
+    </button>
+  </nav>
+</div>
+
+<!-- Confirm dialog -->
+<div id="confirm-overlay">
+  <div class="confirm-sheet">
+    <div class="confirm-title" id="confirm-title"></div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="confirm-cancel">Cancel</button>
+      <button class="confirm-ok" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<!-- MSAL.js v3.30.0 LTS — served locally to avoid CDN load issues -->
+<script src="./js/msal-browser.min.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/graph.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
