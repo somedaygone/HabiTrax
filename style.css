@@ -118,8 +118,8 @@ body {
 #main {
   display: none;
   flex-direction: column;
-  flex: 1;
-  overflow: hidden;
+  position: fixed;
+  inset: 0;
 }
 #main.visible { display: flex; }
 
@@ -283,6 +283,10 @@ body {
   border-color: var(--green);
   color: white;
 }
+.toggle.partial {
+  background: conic-gradient(var(--green) 50%, var(--bg) 50%);
+  border-color: var(--green);
+}
 
 /* ── Back-to-today bar ── */
 .back-today-bar {
@@ -380,7 +384,7 @@ body {
 .pressure-hint {
   font-size: 12px;
   color: var(--muted);
-  padding-top: 10px;
+  margin-bottom: 10px;
 }
 .form-actions {
   display: flex;
@@ -478,15 +482,16 @@ body {
 .nav-tab {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 7px;
   border: none;
   background: none;
   cursor: pointer;
-  padding: 6px 0;
+  padding: 10px 4px;
   color: #bbb;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 500;
   font-family: var(--font);
   transition: color 0.15s;
@@ -593,3 +598,96 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-label { font-size: 13px; color: var(--muted); }
+
+/* ── Font Size Zoom ── */
+body[data-font="small"]  { zoom: 0.9; }
+body[data-font="large"]  { zoom: 1.15; }
+
+/* ── Dark Mode ── */
+html.dark {
+  --text:  #e8e8e8;
+  --muted: #666;
+  --sep:   #2c2c2c;
+  --sep2:  #222;
+  --bg:    #111;
+  --hover: #1d1d1d;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([class*="dark"]):not([class*="light"]) {
+    /* handled by JS via .dark class */
+  }
+}
+
+/* Dark overrides for hardcoded colours */
+html.dark .date-nav-btn                    { background: #252525; color: #bbb; }
+html.dark .date-nav-btn:hover:not(:disabled){ background: #2e2e2e; }
+html.dark .date-nav-btn:disabled            { color: #444; background: #252525; }
+
+html.dark .edit-form                        { background: #1c1c1c; border-color: #333; }
+html.dark .edit-form input[type="text"],
+html.dark .edit-form input[type="number"]   { background: #252525; border-color: #3a3a3a; color: var(--text); }
+
+html.dark .cancel-btn                       { background: #252525; color: #aaa; }
+
+html.dark .confirm-sheet                    { background: #1c1c1c; }
+html.dark .confirm-cancel                   { background: #252525; border-color: #3a3a3a; color: #bbb; }
+html.dark .confirm-msg                      { color: #999; }
+
+html.dark .mgmt-btn                         { background: #252525; border-color: #333; color: #aaa; }
+html.dark .mgmt-btn.del                     { border-color: #3d1f1f; }
+
+html.dark .add-btn,
+html.dark .sign-in-btn,
+html.dark .err-btn.primary                  { background: #e0e0e0; color: #111; }
+
+html.dark #toast                            { background: #e0e0e0; color: #111; }
+
+/* ── Settings View ── */
+.settings-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sep);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.settings-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+.settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.settings-section-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.seg-group {
+  display: flex;
+  border: 1px solid var(--sep);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.seg-btn {
+  flex: 1;
+  padding: 11px 8px;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.seg-btn + .seg-btn { border-left: 1px solid var(--sep); }
+.seg-btn.active     { background: var(--text); color: var(--bg); }

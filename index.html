@@ -10,12 +10,18 @@
   <meta name="theme-color" content="#ffffff">
   <title>HabiTrax</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
+  <link rel="apple-touch-icon" href="./icons/icon-512.png">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./icons/icon-16.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css">
+  <!-- Apply saved theme immediately to prevent flash of wrong color scheme -->
+  <script>
+  (function(){try{var s=JSON.parse(localStorage.getItem('habitrax_settings')||'{}');var t=s.theme||'system';if(t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');document.querySelector('meta[name="theme-color"]').content='#111111';}}catch(e){}}());
+  </script>
 </head>
 <body>
 
@@ -91,11 +97,17 @@
           <div id="form-title" style="font-size:14px;font-weight:600;margin-bottom:12px;">New Habit</div>
           <label for="habit-name-input">Habit Name</label>
           <input type="text" id="habit-name-input" placeholder="e.g. Morning Prayer" autocomplete="off">
+          <label>Completion Type</label>
+          <div class="seg-group" id="multi-state-group" style="margin-bottom:8px;">
+            <button type="button" class="seg-btn active" data-value="single">Single</button>
+            <button type="button" class="seg-btn" data-value="partial">Partial</button>
+          </div>
+          <div class="pressure-hint" id="multi-state-hint" style="display:none;margin-bottom:12px;">Adds a half-filled state for partial completion. Pressure logic applies to full completion only.</div>
           <label for="habit-pressure-input">Days before warning (pressure window)</label>
           <div class="pressure-row">
             <input type="number" id="habit-pressure-input" placeholder="3" min="1" max="365">
-            <div class="pressure-hint">days without completion before turning red</div>
           </div>
+          <div class="pressure-hint">days without completion before turning red</div>
           <div class="form-actions">
             <button class="cancel-btn" id="form-cancel-btn">Cancel</button>
             <button class="save-btn" id="form-save-btn">Save</button>
@@ -108,13 +120,40 @@
     <div class="mgmt-list" id="mgmt-list"></div>
   </div>
 
+  <div class="view" id="view-settings">
+    <div class="settings-header">
+      <div class="settings-title">Settings</div>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <div class="settings-section-label">Font Size</div>
+        <div class="seg-group" id="font-size-group">
+          <button class="seg-btn" data-value="small">Small</button>
+          <button class="seg-btn" data-value="medium">Medium</button>
+          <button class="seg-btn" data-value="large">Large</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-label">Appearance</div>
+        <div class="seg-group" id="theme-group">
+          <button class="seg-btn" data-value="light">☀️ Light</button>
+          <button class="seg-btn" data-value="dark">🌙 Dark</button>
+          <button class="seg-btn" data-value="system">Auto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Bottom navigation -->
   <nav class="bottom-nav">
     <button class="nav-tab active" id="nav-today">
       <span class="nav-icon">☀️</span>Today
     </button>
     <button class="nav-tab" id="nav-manage">
-      <span class="nav-icon">⚙️</span>Habits
+      <span class="nav-icon">🔄</span>Habits
+    </button>
+    <button class="nav-tab" id="nav-settings">
+      <span class="nav-icon">⚙️</span>Settings
     </button>
   </nav>
 </div>

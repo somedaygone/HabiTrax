@@ -1,5 +1,43 @@
 // app.js — HabiTrax main application logic
 
+// ── Settings ────────────────────────────────────────────
+const SETTINGS_KEY = 'habitrax_settings';
+let settings = { fontSize: 'medium', theme: 'system' };
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) settings = { ...settings, ...JSON.parse(raw) };
+  } catch {}
+}
+
+function saveSettings() {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function applySettings() {
+  // Font size via zoom
+  document.body.dataset.font = settings.fontSize;
+
+  // Theme
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = settings.theme === 'dark' || (settings.theme === 'system' && prefersDark);
+  document.documentElement.classList.toggle('dark', isDark);
+
+  // Sync meta theme-color for browser chrome
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.content = isDark ? '#111111' : '#ffffff';
+}
+
+function renderSettingsView() {
+  document.querySelectorAll('#font-size-group .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === settings.fontSize);
+  });
+  document.querySelectorAll('#theme-group .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === settings.theme);
+  });
+}
+
 // ── State ──────────────────────────────────────────────
 let data = { habits: [], log: {} };   // OneDrive data model
 let viewDate = todayStr();            // currently viewed date (ISO string)
@@ -10,7 +48,8 @@ let editingHabitId = null;            // null = adding new, string = editing exi
 
 // ── Utility ────────────────────────────────────────────
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function dateStr(d) {
@@ -41,11 +80,19 @@ function uuid() {
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+// ── Log value helper (handles legacy boolean true/false) ────
+function getLogValue(dayLog, habitId) {
+  const v = dayLog[habitId];
+  if (v === true || v === 1) return 1;
+  if (v === 0.5) return 0.5;
+  return 0;
+}
+
 // ── Pressure logic ──────────────────────────────────────
 function daysSinceLastDone(habitId, upToDate) {
   for (let i = 1; i <= 366; i++) {
     const ds = addDays(upToDate, -i);
-    if (data.log[ds] && data.log[ds][habitId] === true) return i;
+    if (data.log[ds] && (data.log[ds][habitId] === true || data.log[ds][habitId] === 1)) return i;
   }
   return 999;
 }
@@ -54,7 +101,7 @@ function pressureState(habitId, forDate) {
   const habit = data.habits.find(h => h.id === habitId);
   if (!habit) return 'neutral';
   const dayLog = data.log[forDate] || {};
-  if (dayLog[habitId] === true) return 'done';
+  if (dayLog[habitId] === true || dayLog[habitId] === 1) return 'done';
   const days = daysSinceLastDone(habitId, forDate);
   if (days >= habit.pressureDays) return 'red';
   if (days >= Math.round(habit.pressureDays / 2)) return 'yellow';
@@ -76,9 +123,9 @@ function renderTodayView() {
   if (isToday) backBar.classList.remove('visible');
   else          backBar.classList.add('visible');
 
-  // Score
+  // Score — full = 1, partial = 0.5, none = 0
   const total = data.habits.length;
-  const done  = data.habits.filter(h => dayLog[h.id] === true).length;
+  const done  = data.habits.reduce((sum, h) => sum + getLogValue(dayLog, h.id), 0);
   document.getElementById('score-display').innerHTML = `${done} <span>/ ${total}</span>`;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const fill = document.getElementById('score-bar');
@@ -91,13 +138,16 @@ function renderTodayView() {
   const list = document.getElementById('habit-list');
   list.innerHTML = '';
   sorted.forEach(h => {
-    const isDone = dayLog[h.id] === true;
-    const state  = pressureState(h.id, viewDate);
-    const days   = isDone ? 0 : daysSinceLastDone(h.id, viewDate);
+    const value     = getLogValue(dayLog, h.id);
+    const isDone    = value === 1;
+    const isPartial = value === 0.5;
+    const state     = pressureState(h.id, viewDate);
+    const days      = isDone ? 0 : daysSinceLastDone(h.id, viewDate);
 
     const barClass  = { done:'bar-green', yellow:'bar-yellow', red:'bar-red', neutral:'bar-neutral' }[state];
     const daysClass = state === 'red' ? 'overdue' : state === 'yellow' ? 'warn' : '';
     const daysLabel = isDone ? '—' : days > 99 ? 'new' : `${days}d`;
+    const toggleClass = isDone ? 'toggle checked' : isPartial ? 'toggle partial' : 'toggle';
 
     const row = document.createElement('div');
     row.className = 'habit-row' + (isOnline ? '' : ' offline');
@@ -105,7 +155,7 @@ function renderTodayView() {
       <div class="pressure-bar ${barClass}"></div>
       <div class="habit-name${isDone ? ' done' : ''}">${escHtml(h.name)}</div>
       <div class="habit-days ${daysClass}">${daysLabel}</div>
-      <div class="toggle${isDone ? ' checked' : ''}">✓</div>
+      <div class="${toggleClass}">${isDone ? '✓' : ''}</div>
     `;
     if (isOnline) {
       row.addEventListener('click', () => toggleHabit(h.id));
@@ -134,7 +184,7 @@ function renderManageView() {
       <div class="drag-handle" title="Drag to reorder">⠿</div>
       <div class="mgmt-info">
         <div class="mgmt-name">${escHtml(h.name)}</div>
-        <div class="mgmt-meta">pressure: ${h.pressureDays} day${h.pressureDays !== 1 ? 's' : ''}</div>
+        <div class="mgmt-meta">pressure: ${h.pressureDays} day${h.pressureDays !== 1 ? 's' : ''}${h.multiState ? ' · partial' : ''}</div>
       </div>
       <div class="mgmt-actions">
         <button class="mgmt-btn edit-btn">Edit</button>
@@ -157,8 +207,20 @@ function render() {
 async function toggleHabit(habitId) {
   if (!isOnline) return;
   if (!data.log[viewDate]) data.log[viewDate] = {};
-  const current = data.log[viewDate][habitId] === true;
-  data.log[viewDate][habitId] = !current;
+  const habit   = data.habits.find(h => h.id === habitId);
+  const current = getLogValue(data.log[viewDate], habitId);
+
+  if (habit && habit.multiState) {
+    // Three-state cycle: 0 → 0.5 → 1 → 0
+    if (current === 0)   { data.log[viewDate][habitId] = 0.5; }
+    else if (current === 0.5) { data.log[viewDate][habitId] = 1; }
+    else                 { delete data.log[viewDate][habitId]; }
+  } else {
+    // Binary toggle (preserve legacy true/false format)
+    if (current === 1) { delete data.log[viewDate][habitId]; }
+    else               { data.log[viewDate][habitId] = true; }
+  }
+
   renderTodayView();
   await persist();
 }
@@ -177,6 +239,7 @@ function openAddForm() {
   document.getElementById('form-title').textContent = 'New Habit';
   document.getElementById('habit-name-input').value = '';
   document.getElementById('habit-pressure-input').value = '';
+  setMultiStateSeg('single');
   showForm();
 }
 
@@ -187,7 +250,15 @@ function openEditForm(id) {
   document.getElementById('form-title').textContent = 'Edit Habit';
   document.getElementById('habit-name-input').value = h.name;
   document.getElementById('habit-pressure-input').value = h.pressureDays;
+  setMultiStateSeg(h.multiState ? 'partial' : 'single');
   showForm();
+}
+
+function setMultiStateSeg(value) {
+  document.querySelectorAll('#multi-state-group .seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
+  document.getElementById('multi-state-hint').style.display = value === 'partial' ? 'block' : 'none';
 }
 
 function showForm() {
@@ -210,15 +281,18 @@ async function saveHabitForm() {
   if (!name) { showToast('Please enter a habit name'); return; }
   if (!pressureDays || pressureDays < 1) { showToast('Pressure window must be at least 1 day'); return; }
 
+  const multiState = document.querySelector('#multi-state-group .seg-btn.active')?.dataset.value === 'partial';
+
   if (editingHabitId) {
     const h = data.habits.find(h => h.id === editingHabitId);
-    if (h) { h.name = name; h.pressureDays = pressureDays; }
+    if (h) { h.name = name; h.pressureDays = pressureDays; h.multiState = multiState; }
   } else {
     const maxOrder = data.habits.reduce((m, h) => Math.max(m, h.order), -1);
     data.habits.push({
       id: uuid(),
       name,
       pressureDays,
+      multiState,
       order: maxOrder + 1,
       createdAt: todayStr(),
     });
@@ -353,9 +427,42 @@ async function init() {
   window.addEventListener('offline', () => setOnlineState(false));
   setOnlineState(navigator.onLine);
 
+  // Load and apply settings
+  loadSettings();
+  applySettings();
+
+  // Listen for system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (settings.theme === 'system') applySettings();
+  });
+
   // Wire up nav
-  document.getElementById('nav-today').addEventListener('click',  () => switchView('today'));
-  document.getElementById('nav-manage').addEventListener('click', () => switchView('manage'));
+  document.getElementById('nav-today').addEventListener('click',    () => switchView('today'));
+  document.getElementById('nav-manage').addEventListener('click',   () => switchView('manage'));
+  document.getElementById('nav-settings').addEventListener('click', () => {
+    switchView('settings');
+    renderSettingsView();
+  });
+
+  // Font size buttons
+  document.querySelectorAll('#font-size-group .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      settings.fontSize = btn.dataset.value;
+      saveSettings();
+      applySettings();
+      renderSettingsView();
+    });
+  });
+
+  // Theme buttons
+  document.querySelectorAll('#theme-group .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      settings.theme = btn.dataset.value;
+      saveSettings();
+      applySettings();
+      renderSettingsView();
+    });
+  });
 
   // Wire up date nav
   document.getElementById('btn-prev').addEventListener('click', () => shiftDate(-1));
@@ -369,6 +476,11 @@ async function init() {
   document.getElementById('add-habit-btn').addEventListener('click', openAddForm);
   document.getElementById('form-save-btn').addEventListener('click', saveHabitForm);
   document.getElementById('form-cancel-btn').addEventListener('click', hideForm);
+
+  // Multi-state segmented control in edit form
+  document.querySelectorAll('#multi-state-group .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => setMultiStateSeg(btn.dataset.value));
+  });
 
   // Wire up confirm dialog
   document.getElementById('confirm-cancel').addEventListener('click', hideConfirm);

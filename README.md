@@ -5,8 +5,10 @@ A lightweight PWA habit tracker that syncs your data to OneDrive — no backend,
 ## Features
 
 - **Daily tracking** — check off habits each day with a simple tap
+- **Partial completion** — habits support multiple completion levels (e.g. none / partial / full)
 - **Pressure window** — each habit turns red after a configurable number of days without completion, so nothing slips through the cracks
 - **Date navigation** — review and edit past days
+- **Settings** — adjust font size and choose light, dark, or system theme
 - **OneDrive sync** — data stored as a single JSON file in your OneDrive app folder (`/Apps/HabiTrax/habits-data.json`)
 - **PWA** — installable on iPhone/Android home screen, works offline (read-only when offline)
 - **No backend** — pure static files hosted on GitHub Pages
@@ -73,6 +75,10 @@ All data is stored in a single JSON file in your OneDrive:
 │   └── icon-512.png
 └── docs/               # Reference docs (not deployed)
 ```
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## License
 
